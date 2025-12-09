@@ -101,7 +101,7 @@ def train_and_save_models():
     balanced_df_sample = pd.concat([
         balanced_df[balanced_df['Class'] == 0].head(10),
         balanced_df[balanced_df['Class'] == 1].head(10)
-    ])
+    ]).reset_index(drop=True)
     
     samples = {
         'fraud': sample_fraud,

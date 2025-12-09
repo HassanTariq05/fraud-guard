@@ -62,23 +62,43 @@ def load_pretrained_models():
         with open(os.path.join(models_dir, 'samples.pkl'), 'rb') as f:
             samples = pickle.load(f)
         
-        return trained_models, scaler_amount, scaler_time, feature_names, all_metrics, samples['fraud'], samples['non_fraud'], samples['balanced_df']
+        return {
+            'trained_models': trained_models,
+            'scaler_amount': scaler_amount,
+            'scaler_time': scaler_time,
+            'feature_names': feature_names,
+            'all_metrics': all_metrics,
+            'sample_fraud': samples['fraud'],
+            'sample_non_fraud': samples['non_fraud'],
+            'balanced_df': samples['balanced_df'],
+            'loaded': True
+        }
     
     except FileNotFoundError as e:
-        st.error(f"❌ Model file not found: {str(e)}")
-        st.info("Make sure all pickle files are in the models/ directory.")
-        st.stop()
+        return {'loaded': False, 'error': f"Model file not found: {str(e)}"}
     except Exception as e:
-        st.error(f"❌ Error loading models: {str(e)}")
-        st.stop()
+        return {'loaded': False, 'error': f"Error loading models: {str(e)}"}
 
-# Load pre-trained models
-try:
-    trained_models, scaler_amount, scaler_time, feature_names, all_metrics, sample_fraud, sample_non_fraud, balanced_df = load_pretrained_models()
-except Exception as e:
-    st.error(f"Failed to load models: {str(e)}")
-    st.info("Please ensure models are trained. Run: python train_model.py")
+# Initialize models
+models_data = load_pretrained_models()
+
+if not models_data.get('loaded'):
+    st.set_page_config(page_title="Error", page_icon="❌")
+    st.error(f"❌ {models_data.get('error', 'Unknown error')}")
+    st.info("Please ensure:")
+    st.write("1. All pickle files exist in the `models/` directory")
+    st.write("2. The models were trained by running `python train_model.py`")
     st.stop()
+
+# Extract loaded models
+trained_models = models_data['trained_models']
+scaler_amount = models_data['scaler_amount']
+scaler_time = models_data['scaler_time']
+feature_names = models_data['feature_names']
+all_metrics = models_data['all_metrics']
+sample_fraud = models_data['sample_fraud']
+sample_non_fraud = models_data['sample_non_fraud']
+balanced_df = models_data['balanced_df']
 
 st.title("💳 Credit Card Fraud Detection System")
 st.markdown("---")
