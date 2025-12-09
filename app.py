@@ -13,15 +13,33 @@ import pickle
 import os
 import io
 import sys
+import logging
+import traceback
+
+# Set up logging for debugging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+logger.info("=" * 80)
+logger.info("STREAMLIT APP STARTING")
+logger.info("=" * 80)
+logger.info(f"Python version: {sys.version}")
+logger.info(f"Current working directory: {os.getcwd()}")
+logger.info(f"Script directory: {os.path.dirname(os.path.abspath(__file__))}")
 
 # Add current directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+logger.info("Path setup complete")
 
 st.set_page_config(
     page_title="Credit Card Fraud Detection",
     page_icon="💳",
     layout="wide"
 )
+logger.info("Page config set successfully")
 
 if 'prediction_history' not in st.session_state:
     st.session_state.prediction_history = []
@@ -36,31 +54,60 @@ if 'loaded_sample' not in st.session_state:
 if 'prefill_sample' not in st.session_state:
     st.session_state.prefill_sample = False
 
+logger.info("Session state initialized")
+
 @st.cache_resource
 def load_pretrained_models():
     """Load pre-trained models from pickle files."""
+    logger.info("=" * 80)
+    logger.info("LOADING PRE-TRAINED MODELS")
+    logger.info("=" * 80)
+    
     # Get the directory of this script
     script_dir = os.path.dirname(os.path.abspath(__file__))
     models_dir = os.path.join(script_dir, 'models')
     
+    logger.info(f"Script directory: {script_dir}")
+    logger.info(f"Models directory: {models_dir}")
+    logger.info(f"Models directory exists: {os.path.exists(models_dir)}")
+    
+    if os.path.exists(models_dir):
+        logger.info(f"Files in models directory: {os.listdir(models_dir)}")
+    
     try:
+        logger.info("Loading trained_models.pkl...")
         with open(os.path.join(models_dir, 'trained_models.pkl'), 'rb') as f:
             trained_models = pickle.load(f)
+        logger.info(f"✓ Loaded trained_models: {list(trained_models.keys())}")
         
+        logger.info("Loading scaler_amount.pkl...")
         with open(os.path.join(models_dir, 'scaler_amount.pkl'), 'rb') as f:
             scaler_amount = pickle.load(f)
+        logger.info("✓ Loaded scaler_amount")
         
+        logger.info("Loading scaler_time.pkl...")
         with open(os.path.join(models_dir, 'scaler_time.pkl'), 'rb') as f:
             scaler_time = pickle.load(f)
+        logger.info("✓ Loaded scaler_time")
         
+        logger.info("Loading feature_names.pkl...")
         with open(os.path.join(models_dir, 'feature_names.pkl'), 'rb') as f:
             feature_names = pickle.load(f)
+        logger.info(f"✓ Loaded {len(feature_names)} feature names")
         
+        logger.info("Loading metrics.pkl...")
         with open(os.path.join(models_dir, 'metrics.pkl'), 'rb') as f:
             all_metrics = pickle.load(f)
+        logger.info(f"✓ Loaded metrics for {list(all_metrics.keys())}")
         
+        logger.info("Loading samples.pkl...")
         with open(os.path.join(models_dir, 'samples.pkl'), 'rb') as f:
             samples = pickle.load(f)
+        logger.info("✓ Loaded samples")
+        
+        logger.info("=" * 80)
+        logger.info("ALL MODELS LOADED SUCCESSFULLY!")
+        logger.info("=" * 80)
         
         return {
             'trained_models': trained_models,
@@ -75,21 +122,30 @@ def load_pretrained_models():
         }
     
     except FileNotFoundError as e:
+        logger.error(f"❌ Model file not found: {str(e)}")
+        logger.error(traceback.format_exc())
         return {'loaded': False, 'error': f"Model file not found: {str(e)}"}
     except Exception as e:
+        logger.error(f"❌ Error loading models: {str(e)}")
+        logger.error(traceback.format_exc())
         return {'loaded': False, 'error': f"Error loading models: {str(e)}"}
 
 # Initialize models
+logger.info("Calling load_pretrained_models()...")
 models_data = load_pretrained_models()
+logger.info(f"Models data returned. Loaded: {models_data.get('loaded')}")
 
 if not models_data.get('loaded'):
+    logger.error(f"MODEL LOADING FAILED: {models_data.get('error')}")
     st.set_page_config(page_title="Error", page_icon="❌")
     st.error(f"❌ {models_data.get('error', 'Unknown error')}")
     st.info("Please ensure:")
     st.write("1. All pickle files exist in the `models/` directory")
     st.write("2. The models were trained by running `python train_model.py`")
+    logger.info("App stopped due to model loading failure")
     st.stop()
 
+logger.info("Models loaded successfully, extracting variables...")
 # Extract loaded models
 trained_models = models_data['trained_models']
 scaler_amount = models_data['scaler_amount']
@@ -100,8 +156,14 @@ sample_fraud = models_data['sample_fraud']
 sample_non_fraud = models_data['sample_non_fraud']
 balanced_df = models_data['balanced_df']
 
+logger.info("All variables extracted successfully")
+logger.info(f"Number of models: {len(trained_models)}")
+logger.info(f"Number of features: {len(feature_names)}")
+logger.info(f"Balanced DF shape: {balanced_df.shape}")
+
 st.title("💳 Credit Card Fraud Detection System")
 st.markdown("---")
+logger.info("UI initialized successfully")
 
 tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "🔍 Single Prediction", 
