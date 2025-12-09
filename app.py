@@ -9,6 +9,8 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 from xgboost import XGBClassifier
+import pickle
+import os
 import io
 
 st.set_page_config(
@@ -31,69 +33,36 @@ if 'prefill_sample' not in st.session_state:
     st.session_state.prefill_sample = False
 
 @st.cache_resource
-def load_and_train_models():
-    file_url = "https://drive.google.com/uc?export=download&id=1O5kyx9ZVne2rPYtGdZ7odg2ay_nmqTrl"
-
-    try:
-        df_raw = pd.read_csv(file_url)
-    except Exception as e:
-        st.error("Failed to load dataset from Google Drive.")
+def load_pretrained_models():
+    """Load pre-trained models from pickle files."""
+    models_dir = 'models'
+    
+    if not os.path.exists(models_dir):
+        st.error("Models directory not found! Please run train_model.py first.")
         st.stop()
     
-    fraud = df_raw[df_raw['Class'] == 1]
-    non_fraud = df_raw[df_raw['Class'] == 0].sample(n=len(fraud), random_state=42)
-    balanced_df = pd.concat([fraud, non_fraud])
+    with open(os.path.join(models_dir, 'trained_models.pkl'), 'rb') as f:
+        trained_models = pickle.load(f)
     
-    X = balanced_df.drop('Class', axis=1)
-    y = balanced_df['Class']
+    with open(os.path.join(models_dir, 'scaler_amount.pkl'), 'rb') as f:
+        scaler_amount = pickle.load(f)
     
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+    with open(os.path.join(models_dir, 'scaler_time.pkl'), 'rb') as f:
+        scaler_time = pickle.load(f)
     
-    scaler_amount = StandardScaler()
-    scaler_time = StandardScaler()
+    with open(os.path.join(models_dir, 'feature_names.pkl'), 'rb') as f:
+        feature_names = pickle.load(f)
     
-    X_train_processed = X_train.copy()
-    X_train_processed['Scaled_Amount'] = scaler_amount.fit_transform(X_train[['Amount']])
-    X_train_processed['Scaled_Time'] = scaler_time.fit_transform(X_train[['Time']])
-    X_train_processed = X_train_processed.drop(['Amount', 'Time'], axis=1)
+    with open(os.path.join(models_dir, 'metrics.pkl'), 'rb') as f:
+        all_metrics = pickle.load(f)
     
-    X_test_processed = X_test.copy()
-    X_test_processed['Scaled_Amount'] = scaler_amount.transform(X_test[['Amount']])
-    X_test_processed['Scaled_Time'] = scaler_time.transform(X_test[['Time']])
-    X_test_processed = X_test_processed.drop(['Amount', 'Time'], axis=1)
+    with open(os.path.join(models_dir, 'samples.pkl'), 'rb') as f:
+        samples = pickle.load(f)
     
-    feature_names = list(X_train_processed.columns)
-    
-    models = {
-        'Random Forest': RandomForestClassifier(random_state=42, n_jobs=-1),
-        'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
-        'XGBoost': XGBClassifier(random_state=42, eval_metric='logloss', n_jobs=-1)
-    }
-    
-    all_metrics = {}
-    trained_models = {}
-    
-    for name, model in models.items():
-        model.fit(X_train_processed, y_train)
-        trained_models[name] = model
-        
-        y_pred = model.predict(X_test_processed)
-        all_metrics[name] = {
-            'accuracy': accuracy_score(y_test, y_pred),
-            'precision': precision_score(y_test, y_pred),
-            'recall': recall_score(y_test, y_pred),
-            'f1': f1_score(y_test, y_pred),
-            'confusion_matrix': confusion_matrix(y_test, y_pred),
-            'y_test': y_test,
-            'y_pred': y_pred
-        }
-    
-    sample_fraud = balanced_df[balanced_df['Class'] == 1].iloc[0].to_dict()
-    sample_non_fraud = balanced_df[balanced_df['Class'] == 0].iloc[0].to_dict()
-    
-    return trained_models, scaler_amount, scaler_time, all_metrics, feature_names, balanced_df, sample_fraud, sample_non_fraud, X_train_processed
+    return trained_models, scaler_amount, scaler_time, feature_names, all_metrics, samples['fraud'], samples['non_fraud'], samples['balanced_df']
 
-trained_models, scaler_amount, scaler_time, all_metrics, feature_names, balanced_df, sample_fraud, sample_non_fraud, X_train_processed = load_and_train_models()
+# Load pre-trained models
+trained_models, scaler_amount, scaler_time, feature_names, all_metrics, sample_fraud, sample_non_fraud, balanced_df = load_pretrained_models()
 
 st.title("💳 Credit Card Fraud Detection System")
 st.markdown("---")

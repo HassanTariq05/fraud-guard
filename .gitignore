@@ -1,2 +1,6 @@
 attached_assets/creditcard_1764489876422.csv
 .local/
+creditcard.csv
+__pycache__/
+*.pyc
+.streamlit/secrets.toml
