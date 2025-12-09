@@ -93,14 +93,20 @@ def train_and_save_models():
     with open('models/metrics.pkl', 'wb') as f:
         pickle.dump(all_metrics, f)
     
-    # Save sample data for the app
+    # Save sample data for the app (only a subset to keep file size small)
     sample_fraud = balanced_df[balanced_df['Class'] == 1].iloc[0].to_dict()
     sample_non_fraud = balanced_df[balanced_df['Class'] == 0].iloc[0].to_dict()
+    
+    # Only store 10 samples of each class instead of full dataset
+    balanced_df_sample = pd.concat([
+        balanced_df[balanced_df['Class'] == 0].head(10),
+        balanced_df[balanced_df['Class'] == 1].head(10)
+    ])
     
     samples = {
         'fraud': sample_fraud,
         'non_fraud': sample_non_fraud,
-        'balanced_df': balanced_df
+        'balanced_df': balanced_df_sample
     }
     
     with open('models/samples.pkl', 'wb') as f:

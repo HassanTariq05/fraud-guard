@@ -12,6 +12,10 @@ from xgboost import XGBClassifier
 import pickle
 import os
 import io
+import sys
+
+# Add current directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 st.set_page_config(
     page_title="Credit Card Fraud Detection",
@@ -39,10 +43,6 @@ def load_pretrained_models():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     models_dir = os.path.join(script_dir, 'models')
     
-    if not os.path.exists(models_dir):
-        st.error(f"❌ Models directory not found at {models_dir}. Please run train_model.py first.")
-        st.stop()
-    
     try:
         with open(os.path.join(models_dir, 'trained_models.pkl'), 'rb') as f:
             trained_models = pickle.load(f)
@@ -64,12 +64,21 @@ def load_pretrained_models():
         
         return trained_models, scaler_amount, scaler_time, feature_names, all_metrics, samples['fraud'], samples['non_fraud'], samples['balanced_df']
     
+    except FileNotFoundError as e:
+        st.error(f"❌ Model file not found: {str(e)}")
+        st.info("Make sure all pickle files are in the models/ directory.")
+        st.stop()
     except Exception as e:
-        st.error(f"❌ Error loading pre-trained models: {str(e)}")
+        st.error(f"❌ Error loading models: {str(e)}")
         st.stop()
 
 # Load pre-trained models
-trained_models, scaler_amount, scaler_time, feature_names, all_metrics, sample_fraud, sample_non_fraud, balanced_df = load_pretrained_models()
+try:
+    trained_models, scaler_amount, scaler_time, feature_names, all_metrics, sample_fraud, sample_non_fraud, balanced_df = load_pretrained_models()
+except Exception as e:
+    st.error(f"Failed to load models: {str(e)}")
+    st.info("Please ensure models are trained. Run: python train_model.py")
+    st.stop()
 
 st.title("💳 Credit Card Fraud Detection System")
 st.markdown("---")
