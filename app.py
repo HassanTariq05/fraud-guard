@@ -34,12 +34,16 @@ logger.info(f"Script directory: {os.path.dirname(os.path.abspath(__file__))}")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 logger.info("Path setup complete")
 
-st.set_page_config(
-    page_title="Credit Card Fraud Detection",
-    page_icon="💳",
-    layout="wide"
-)
-logger.info("Page config set successfully")
+try:
+    st.set_page_config(
+        page_title="Credit Card Fraud Detection",
+        page_icon="💳",
+        layout="wide"
+    )
+    logger.info("Page config set successfully")
+except Exception as e:
+    logger.error(f"Error setting page config: {e}")
+    logger.error(traceback.format_exc())
 
 if 'prediction_history' not in st.session_state:
     st.session_state.prediction_history = []
@@ -75,25 +79,19 @@ def load_pretrained_models():
         logger.info(f"Files in models directory: {os.listdir(models_dir)}")
     
     try:
-        logger.info("Loading trained_models.pkl...")
-        with open(os.path.join(models_dir, 'trained_models.pkl'), 'rb') as f:
-            trained_models = pickle.load(f)
-        logger.info(f"✓ Loaded trained_models: {list(trained_models.keys())}")
+        logger.info("Loading feature_names.pkl (smallest file first)...")
+        with open(os.path.join(models_dir, 'feature_names.pkl'), 'rb') as f:
+            feature_names = pickle.load(f)
+        logger.info(f"✓ Loaded {len(feature_names)} feature names")
         
-        logger.info("Loading scaler_amount.pkl...")
+        logger.info("Loading scalers...")
         with open(os.path.join(models_dir, 'scaler_amount.pkl'), 'rb') as f:
             scaler_amount = pickle.load(f)
         logger.info("✓ Loaded scaler_amount")
         
-        logger.info("Loading scaler_time.pkl...")
         with open(os.path.join(models_dir, 'scaler_time.pkl'), 'rb') as f:
             scaler_time = pickle.load(f)
         logger.info("✓ Loaded scaler_time")
-        
-        logger.info("Loading feature_names.pkl...")
-        with open(os.path.join(models_dir, 'feature_names.pkl'), 'rb') as f:
-            feature_names = pickle.load(f)
-        logger.info(f"✓ Loaded {len(feature_names)} feature names")
         
         logger.info("Loading metrics.pkl...")
         with open(os.path.join(models_dir, 'metrics.pkl'), 'rb') as f:
@@ -104,6 +102,14 @@ def load_pretrained_models():
         with open(os.path.join(models_dir, 'samples.pkl'), 'rb') as f:
             samples = pickle.load(f)
         logger.info("✓ Loaded samples")
+        
+        logger.info("Loading trained_models.pkl (this is large, may take a moment)...")
+        import time
+        start_time = time.time()
+        with open(os.path.join(models_dir, 'trained_models.pkl'), 'rb') as f:
+            trained_models = pickle.load(f)
+        load_time = time.time() - start_time
+        logger.info(f"✓ Loaded trained_models: {list(trained_models.keys())} (took {load_time:.2f}s)")
         
         logger.info("=" * 80)
         logger.info("ALL MODELS LOADED SUCCESSFULLY!")
@@ -130,10 +136,27 @@ def load_pretrained_models():
         logger.error(traceback.format_exc())
         return {'loaded': False, 'error': f"Error loading models: {str(e)}"}
 
-# Initialize models
-logger.info("Calling load_pretrained_models()...")
-models_data = load_pretrained_models()
-logger.info(f"Models data returned. Loaded: {models_data.get('loaded')}")
+import time as time_module
+
+try:
+    # Initialize models
+    logger.info("=" * 80)
+    logger.info("STARTING MODEL LOADING")
+    logger.info("=" * 80)
+    start_load_time = time_module.time()
+    
+    logger.info("Calling load_pretrained_models()...")
+    models_data = load_pretrained_models()
+    
+    load_duration = time_module.time() - start_load_time
+    logger.info(f"Models data returned. Loaded: {models_data.get('loaded')}")
+    logger.info(f"Model loading took {load_duration:.2f} seconds")
+    logger.info("=" * 80)
+    
+except Exception as e:
+    logger.error(f"Unexpected error during model loading: {e}")
+    logger.error(traceback.format_exc())
+    models_data = {'loaded': False, 'error': f'Error during startup: {str(e)}'}
 
 if not models_data.get('loaded'):
     logger.error(f"MODEL LOADING FAILED: {models_data.get('error')}")
