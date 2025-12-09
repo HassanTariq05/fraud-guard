@@ -32,7 +32,7 @@ if 'prefill_sample' not in st.session_state:
 
 @st.cache_resource
 def load_and_train_models():
-    file_url = "https://drive.google.com/uc?id=1O5kyx9ZVne2rPYtGdZ7odg2ay_nmqTrl"
+    file_url = "https://drive.google.com/uc?export=download&id=1O5kyx9ZVne2rPYtGdZ7odg2ay_nmqTrl"
 
     try:
         df_raw = pd.read_csv(file_url)
