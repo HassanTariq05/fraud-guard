@@ -35,31 +35,38 @@ if 'prefill_sample' not in st.session_state:
 @st.cache_resource
 def load_pretrained_models():
     """Load pre-trained models from pickle files."""
-    models_dir = 'models'
+    # Get the directory of this script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    models_dir = os.path.join(script_dir, 'models')
     
     if not os.path.exists(models_dir):
-        st.error("Models directory not found! Please run train_model.py first.")
+        st.error(f"❌ Models directory not found at {models_dir}. Please run train_model.py first.")
         st.stop()
     
-    with open(os.path.join(models_dir, 'trained_models.pkl'), 'rb') as f:
-        trained_models = pickle.load(f)
+    try:
+        with open(os.path.join(models_dir, 'trained_models.pkl'), 'rb') as f:
+            trained_models = pickle.load(f)
+        
+        with open(os.path.join(models_dir, 'scaler_amount.pkl'), 'rb') as f:
+            scaler_amount = pickle.load(f)
+        
+        with open(os.path.join(models_dir, 'scaler_time.pkl'), 'rb') as f:
+            scaler_time = pickle.load(f)
+        
+        with open(os.path.join(models_dir, 'feature_names.pkl'), 'rb') as f:
+            feature_names = pickle.load(f)
+        
+        with open(os.path.join(models_dir, 'metrics.pkl'), 'rb') as f:
+            all_metrics = pickle.load(f)
+        
+        with open(os.path.join(models_dir, 'samples.pkl'), 'rb') as f:
+            samples = pickle.load(f)
+        
+        return trained_models, scaler_amount, scaler_time, feature_names, all_metrics, samples['fraud'], samples['non_fraud'], samples['balanced_df']
     
-    with open(os.path.join(models_dir, 'scaler_amount.pkl'), 'rb') as f:
-        scaler_amount = pickle.load(f)
-    
-    with open(os.path.join(models_dir, 'scaler_time.pkl'), 'rb') as f:
-        scaler_time = pickle.load(f)
-    
-    with open(os.path.join(models_dir, 'feature_names.pkl'), 'rb') as f:
-        feature_names = pickle.load(f)
-    
-    with open(os.path.join(models_dir, 'metrics.pkl'), 'rb') as f:
-        all_metrics = pickle.load(f)
-    
-    with open(os.path.join(models_dir, 'samples.pkl'), 'rb') as f:
-        samples = pickle.load(f)
-    
-    return trained_models, scaler_amount, scaler_time, feature_names, all_metrics, samples['fraud'], samples['non_fraud'], samples['balanced_df']
+    except Exception as e:
+        st.error(f"❌ Error loading pre-trained models: {str(e)}")
+        st.stop()
 
 # Load pre-trained models
 trained_models, scaler_amount, scaler_time, feature_names, all_metrics, sample_fraud, sample_non_fraud, balanced_df = load_pretrained_models()

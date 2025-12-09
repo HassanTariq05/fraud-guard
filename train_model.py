@@ -47,9 +47,9 @@ def train_and_save_models():
     
     print("Training models...")
     models = {
-        'Random Forest': RandomForestClassifier(random_state=42, n_jobs=-1),
+        'Random Forest': RandomForestClassifier(n_estimators=50, random_state=42, n_jobs=-1, max_depth=20),
         'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
-        'XGBoost': XGBClassifier(random_state=42, eval_metric='logloss', n_jobs=-1)
+        'XGBoost': XGBClassifier(n_estimators=50, random_state=42, eval_metric='logloss', n_jobs=-1, max_depth=6)
     }
     
     trained_models = {}
