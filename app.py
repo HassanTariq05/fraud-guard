@@ -32,7 +32,13 @@ if 'prefill_sample' not in st.session_state:
 
 @st.cache_resource
 def load_and_train_models():
-    df_raw = pd.read_csv('creditcard.csv')
+    file_url = "https://drive.google.com/uc?id=1O5kyx9ZVne2rPYtGdZ7odg2ay_nmqTrl"
+
+    try:
+        df_raw = pd.read_csv(file_url)
+    except Exception as e:
+        st.error("Failed to load dataset from Google Drive.")
+        st.stop()
     
     fraud = df_raw[df_raw['Class'] == 1]
     non_fraud = df_raw[df_raw['Class'] == 0].sample(n=len(fraud), random_state=42)
